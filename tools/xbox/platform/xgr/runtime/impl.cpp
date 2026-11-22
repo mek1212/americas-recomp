@@ -11,6 +11,7 @@
 #include <cstring>
 
 #include "gtx/log.h"
+#include "title_id.h"
 #include "xgr_internal.h"
 #include "xtask.h"
 
@@ -104,13 +105,7 @@ bool read_title_id(uint32_t* out) {
   std::fclose(f);
   buf[len] = '\0';
   for (char* p = buf; *p; ++p) *p = static_cast<char>(tolower(static_cast<unsigned char>(*p)));
-  const char* tag = std::strstr(buf, "<titleid>");
-  if (!tag) return false;
-  char* end = nullptr;
-  unsigned long v = std::strtoul(tag + 9, &end, 16);
-  if (end == tag + 9 || *end != '<') return false;
-  *out = static_cast<uint32_t>(v);
-  return true;
+  return parse_title_id(buf, out);
 }
 
 // STDAPI XGameGetXboxTitleId(uint32_t* titleId)
