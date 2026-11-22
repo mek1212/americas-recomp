@@ -17,7 +17,6 @@
 namespace gtx::xgr::ui {
 namespace {
 
-constexpr uint32_t kLastMessageDialogButton = 2;
 constexpr uint32_t kWebAuthenticationOptionsMask = 1;
 
 struct Invocation {

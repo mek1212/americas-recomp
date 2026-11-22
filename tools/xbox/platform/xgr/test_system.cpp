@@ -459,17 +459,30 @@ static void CheckGameUi() {
   user.At<HRESULT (*)(void*, AsyncBlock*, void**)>(8, "XUserAddResult")(user.self, &add, &handle);
 
   {
+    using ShowMessageDialog = HRESULT (*)(void*, AsyncBlock*, const char*, const char*, const char*, const char*, const char*, uint32_t, uint32_t);
+    const auto show = ui.At<ShowMessageDialog>(3, "XGameUiShowMessageDialogAsync");
+    const auto getResult = ui.At<HRESULT (*)(void*, AsyncBlock*, uint32_t*)>(4, "XGameUiShowMessageDialogResult");
     AsyncBlock b{};
-    HRESULT begin = ui.At<HRESULT (*)(void*, AsyncBlock*, const char*, const char*, const char*, const char*, const char*, uint32_t, uint32_t)>(3, "XGameUiShowMessageDialogAsync")(
-        ui.self, &b, "Title", "Content", "OK", nullptr, nullptr, 0, 0);
+    HRESULT begin = show(ui.self, &b, "Title", "Content", "Yes", "No", "Cancel", 0, 2);
     WaitAsync(&b);
     uint32_t button = 9;
-    HRESULT result = ui.At<HRESULT (*)(void*, AsyncBlock*, uint32_t*)>(4, "XGameUiShowMessageDialogResult")(ui.self, &b, &button);
+    HRESULT result = getResult(ui.self, &b, &button);
     CheckAborted(begin, &b, result, "XGameUiShowMessageDialogAsync");
     AsyncBlock bad{};
-    Check(ui.At<HRESULT (*)(void*, AsyncBlock*, const char*, const char*, const char*, const char*, const char*, uint32_t, uint32_t)>(3, "XGameUiShowMessageDialogAsync")(
-              ui.self, &bad, nullptr, "Content", nullptr, nullptr, nullptr, 0, 0) == E_INVALIDARG,
+    Check(show(ui.self, &bad, nullptr, "Content", nullptr, nullptr, nullptr, 0, 0) == E_INVALIDARG,
           "XGameUiShowMessageDialogAsync rejects a null title");
+
+    auto checkInvalidButton = [&](uint32_t defaultButton, uint32_t cancelButton, const char* label) {
+      AsyncBlock invalid{};
+      HRESULT hr = show(ui.self, &invalid, "Title", "Content", "Yes", "No", "Cancel", defaultButton, cancelButton);
+      Check(hr == E_INVALIDARG, label);
+      if (SUCCEEDED(hr)) {
+        WaitAsync(&invalid);
+        getResult(ui.self, &invalid, &button);
+      }
+    };
+    checkInvalidButton(3, 0, "XGameUiShowMessageDialogAsync rejects an unknown default button");
+    checkInvalidButton(0, 3, "XGameUiShowMessageDialogAsync rejects an unknown cancel button");
   }
   {
     AsyncBlock b{};

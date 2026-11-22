@@ -404,6 +404,7 @@ const char* text_of(const std::optional<std::string>& text) { return text ? text
 HRESULT XGameUiShowMessageDialogAsync_impl(void*, task::AsyncBlock* async, const char* title, const char* content, const char* first,
                                            const char* second, const char* third, uint32_t defaultButton, uint32_t cancelButton) {
   if (!async || !title || !content) return E_INVALIDARG;
+  if (defaultButton > ui::kLastMessageDialogButton || cancelButton > ui::kLastMessageDialogButton) return E_INVALIDARG;
   const void* identity = reinterpret_cast<const void*>(&XGameUiShowMessageDialogAsync_impl);
   ui::Callbacks callbacks = ui::title_callbacks();
   if (!callbacks.showMessageDialog) return begin_without_ui(async, identity, "XGameUiShowMessageDialogAsync");

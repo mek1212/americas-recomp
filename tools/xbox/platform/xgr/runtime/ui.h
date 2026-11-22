@@ -8,6 +8,8 @@
 
 namespace gtx::xgr::ui {
 
+inline constexpr uint32_t kLastMessageDialogButton = 2;
+
 enum class Request : uint32_t {
   PlayerProfileCard,
   PlayerPicker,
