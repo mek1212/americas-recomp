@@ -14,8 +14,8 @@ Can an Xbox Series game run on a PC through [AnyPS5](https://github.com/boykopov
 |---|---|---|---|
 | Compute | 2,689 | **2,678 (99.6%)** | best of four fake-memory variants (default, unbacked, tiled T#, tiled V#); 0 invalid; 7 time out, 4 throw |
 | Pixel | 12,098 | **12,095 (99.97%, strict)** | no barycentric extension and no f16 opt-in needed any more (#104, #101, and the descriptor-chain work in #86, #87, #91, #94, #102); 3 throw |
-| Vertex | 2,233 | 1,445 (64.7%) | the rest need the real vertex fetch shader |
-| Mesh | 9,282 | 9,240 (99.5%) | mesh configuration is a guess |
+| Vertex | 2,233 | **2,233 (100%)** | with the input tables from the FSSM headers (`vin_full/`, 785 shaders) and the ESGS export halves; without those tables 788 failed |
+| Mesh | 9,282 | 9,281 (99.99%) | mesh configuration is a guess; one throws (650: sampler pairs exceed the runtime heap capacity) |
 | Geometry | 195 | 195 (100%) | `spirv-val` only for the corpus; `gs_test.py` executes two synthetic geometry shaders |
 
 The corpus is the 26,503 shaders of `shaders.rpf` (26,497 went through the recompiler; 6 do not inflate). The strict pixel number is the headline: the f16 approximation is opt-in and off by default.
@@ -41,8 +41,8 @@ How to use all of it once the game executable is available: [`tools/xbox/platfor
 ## What does not work yet
 
 - **Pixel (3):** the last three shaders that throw. The classes this section used to list are gone in the 2026-11-22 rerun: no shader needs the barycentric extension or the f16 opt-in to validate, and the descriptor and sampler chains, the barycentric location limit and the clamped sampling all compile strict.
-- **Vertex (788):** computed `s_swappc` targets and fetch-shader calls with no parsed plan. Vertex layout comes from pipeline state, so most of these wait for the executable.
-- **Mesh (42 at the last full run):** 37 were per-lane sampler webs, including five wave64 shaders (10264, 10267, 10268, 10451, 10452); #138, merged since, fixes 41 of the 42 when rerun on its own (the full-corpus numbers below predate it). The remaining one (650) exceeds the runtime sampler-pair heap capacity.
+- **Vertex:** all 2,233 pass `spirv-val`, but the vertex layout comes from the FSSM input table, not from pipeline state, so what a draw will really bind waits for the executable.
+- **Mesh (1):** shader 650 exceeds the runtime sampler-pair heap capacity (46 samplers). The 41 per-lane sampler-web failures, including five wave64 shaders, were fixed by #138.
 - **Compute (11):** 7 time out and 4 throw.
 - **Everything the executable decides:** formats, blend and depth state, export mapping, descriptor contents. The harness uses defaults. No frame has been rendered.
 - **Ray tracing:** 62 of 64 shaders that use the hardware BVH instruction recompile, but nothing was traversed. The 8.3 GB BVH dump's bit layout is not decoded ([`BVH_CONTAINER.md`](docs/xbox/BVH_CONTAINER.md)).
